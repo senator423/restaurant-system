@@ -14,11 +14,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='regularpizza',
             name='category',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.SET_DEFAULT, to='orders.Category', verbose_name='Dish Category'),
+            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.SET_DEFAULT, to='placements.Category', verbose_name='Dish Category'),
         ),
         migrations.AddField(
             model_name='sicilianpizza',
             name='category',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.SET_DEFAULT, to='orders.Category', verbose_name='Dish Category'),
+            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.SET_DEFAULT, to='placements.Category', verbose_name='Dish Category'),
         ),
     ]

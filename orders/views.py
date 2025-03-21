@@ -1,5 +1,9 @@
+import requests
 from django.http import HttpResponse
 from django.shortcuts import render,redirect
+from requests.auth import HTTPBasicAuth
+
+from .credentials import MpesaAccessToken, LipanaMpesaPpassword
 from .models import Category, RegularPizza, SicilianPizza, Toppings, Sub, Pasta, Salad, DinnerPlatters, UserOrder, SavedCarts
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
@@ -11,7 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 def index(request):
     if request.user.is_authenticated:
         #we are passing in the data from the category model
-        return render(request, "orders/home.html", {"categories":Category.objects.all})
+        return render(request, "placements/home.html", {"categories":Category.objects.all})
     else:
         return redirect("orders:login")
 
@@ -30,8 +34,8 @@ def login_request(request):
 
     form = AuthenticationForm()
     return render(request = request,
-                    template_name = "orders/login.html",
-                    context={"form":form})
+                  template_name ="placements/login.html",
+                  context={"form":form})
 
 def logout_request(request):
     logout(request)
@@ -47,67 +51,67 @@ def register(request):
             return redirect("orders:index")
 
         return render(request = request,
-                          template_name = "orders/register.html",
-                          context={"form":form})
+                      template_name ="placements/register.html",
+                      context={"form":form})
 
     return render(request = request,
-                  template_name = "orders/register.html",
+                  template_name ="placements/register.html",
                   context={"form":UserCreationForm})
 
 def pizza(request):
     if request.user.is_authenticated:
-        return render(request, "orders/pizza.html", context = {"regular_pizza":RegularPizza.objects.all, "sicillian_pizza":SicilianPizza.objects.all , "toppings":Toppings.objects.all, "number_of_toppings":[1,2,3]})
+        return render(request, "placements/pizza.html", context = {"regular_pizza":RegularPizza.objects.all, "sicillian_pizza":SicilianPizza.objects.all , "toppings":Toppings.objects.all, "number_of_toppings":[1, 2, 3]})
     else:
         return redirect("orders:login")
 
 def pasta(request):
     if request.user.is_authenticated:
-        return render(request, "orders/pasta.html", context = {"dishes":Pasta.objects.all})
+        return render(request, "placements/pasta.html", context = {"dishes":Pasta.objects.all})
     else:
         return redirect("orders:login")
 
 
 def salad(request):
     if request.user.is_authenticated:
-        return render(request, "orders/salad.html", context = {"dishes":Salad.objects.all})
+        return render(request, "placements/salad.html", context = {"dishes":Salad.objects.all})
     else:
         return redirect("orders:login")
 
 
 def subs(request):
     if request.user.is_authenticated:
-        return render(request, "orders/sub.html", context = {"dishes":Sub.objects.all})
+        return render(request, "placements/sub.html", context = {"dishes":Sub.objects.all})
     else:
         return redirect("orders:login")
 
 
 def dinner_platters(request):
     if request.user.is_authenticated:
-        return render(request, "orders/dinner_platters.html", context = {"dishes":DinnerPlatters.objects.all})
+        return render(request, "placements/dinner_platters.html", context = {"dishes":DinnerPlatters.objects.all})
     else:
         return redirect("orders:login")
 
 def directions(request):
     if request.user.is_authenticated:
-        return render(request, "orders/directions.html")
+        return render(request, "placements/directions.html")
     else:
         return redirect("orders:login")
 
 def hours(request):
     if request.user.is_authenticated:
-        return render(request, "orders/hours.html")
+        return render(request, "placements/hours.html")
     else:
         return redirect("orders:login")
 
 def contact(request):
     if request.user.is_authenticated:
-        return render(request, "orders/contact.html")
+        return render(request, "placements/contact.html")
     else:
         return redirect("orders:login")
 
 def cart(request):
     if request.user.is_authenticated:
-        return render(request, "orders/cart.html")
+        return render(request, "placements/cart.html")
     else:
         return redirect("orders:login")
 
@@ -136,14 +140,14 @@ def checkout(request):
 
 def view_orders(request):
     if request.user.is_superuser:
-        #make a request for all the orders in the database
+        #make a request for all the placements in the database
         rows = UserOrder.objects.all().order_by('-time_of_order')
-        #orders.append(row.order[1:-1].split(","))
+        #placements.append(row.order[1:-1].split(","))
 
-        return render(request, "orders/orders.html", context = {"rows":rows})
+        return render(request, "placements/orders.html", context = {"rows":rows})
     else:
         rows = UserOrder.objects.all().filter(username = request.user.username).order_by('-time_of_order')
-        return render(request, "orders/orders.html", context = {"rows":rows})
+        return render(request, "placements/orders.html", context = {"rows":rows})
 
 def mark_order_as_delivered(request):
     if request.method == 'POST':
@@ -181,3 +185,48 @@ def retrieve_saved_cart(request):
 def check_superuser(request):
     print(f"User super??? {request.user.is_superuser}")
     return HttpResponse(request.user.is_superuser)
+
+def home(request):
+    return render(request, 'payment/main.html', {'navbar': 'home'})
+
+
+def token(request):
+    consumer_key = '/'
+    consumer_secret = 'viM8ejHgtEmtPTHd'
+    api_URL = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials'
+
+    r = requests.get(api_URL, auth=HTTPBasicAuth(
+        consumer_key, consumer_secret))
+    mpesa_access_token = json.loads(r.text)
+    validated_mpesa_access_token = mpesa_access_token["access_token"]
+
+    return render(request, 'payment/token.html', {"token": validated_mpesa_access_token})
+
+
+def pay(request):
+    if request.method == "POST":
+        phone = request.POST['phone']
+        amount = request.POST['amount']
+        access_token = MpesaAccessToken.validated_mpesa_access_token
+        api_url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+        headers = {"Authorization": "Bearer %s" % access_token}
+        request = {
+            "BusinessShortCode": LipanaMpesaPpassword.Business_short_code,
+            "Password": LipanaMpesaPpassword.decode_password,
+            "Timestamp": LipanaMpesaPpassword.lipa_time,
+            "TransactionType": "CustomerPayBillOnline",
+            "Amount": amount,
+            "PartyA": phone,
+            "PartyB": LipanaMpesaPpassword.Business_short_code,
+            "PhoneNumber": phone,
+            "CallBackURL": "https://sandbox.safaricom.co.ke/mpesa/",
+            "AccountReference": "mpishi-bora",
+            "TransactionDesc": "house chores charges"
+        }
+
+    response = requests.post(api_url, json=request, headers=headers)
+    return HttpResponse("success")
+
+
+def stk(request):
+    return render(request, 'payment/pay.html', {'navbar': 'stk'})

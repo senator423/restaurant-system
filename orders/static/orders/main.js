@@ -7,7 +7,7 @@ $(document).ready(function() {
       load_cart()
     }
 
-    if (window.location.href.indexOf("view-orders") > -1){
+    if (window.location.href.indexOf("view-placements") > -1){
       order_list_functionality()
     }
   });
