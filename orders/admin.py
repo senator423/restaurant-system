@@ -1,21 +1,23 @@
 from django.contrib import admin
 from .models import Category, RegularPizza, SicilianPizza, Toppings, Sub, Pasta, Salad, DinnerPlatters, UserOrder, SavedCarts
-from tinymce.widgets import TinyMCE
+from .widgets import orders
 from django.db import models
+
+
 
 class CategoryAdmin(admin.ModelAdmin):
     formfield_overrides = {
-            models.TextField: {'widget': TinyMCE()},
+            models.TextField: {'widget': orders},
             }
 
 class RegularPizzaAdmin(admin.ModelAdmin):
     formfield_overrides = {
-            models.TextField: {'widget': TinyMCE()},
+            models.TextField: {'widget': orders},
             }
 
 class SicilianPizzaAdmin(admin.ModelAdmin):
     formfield_overrides = {
-            models.TextField: {'widget': TinyMCE()},
+            models.TextField: {'widget': orders},
             }
 
 

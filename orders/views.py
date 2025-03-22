@@ -1,5 +1,5 @@
 import requests
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render,redirect
 from requests.auth import HTTPBasicAuth
 
@@ -113,7 +113,7 @@ def cart(request):
     if request.user.is_authenticated:
         return render(request, "placements/cart.html")
     else:
-        return redirect("orders:login")
+        return redirect("orders:save_cart")
 
 def checkout(request):
     if request.method == 'POST':
@@ -191,7 +191,7 @@ def home(request):
 
 
 def token(request):
-    consumer_key = '/'
+    consumer_key = 'tXVfRGu4bfzHA1Ix84RFYn8Y2DPuTYYAjUz9d3KM210kWQg6'
     consumer_secret = 'viM8ejHgtEmtPTHd'
     api_URL = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials'
 
@@ -221,7 +221,7 @@ def pay(request):
             "PhoneNumber": phone,
             "CallBackURL": "https://sandbox.safaricom.co.ke/mpesa/",
             "AccountReference": "mpishi-bora",
-            "TransactionDesc": "house chores charges"
+            "TransactionDesc": "food consumption charges"
         }
 
     response = requests.post(api_url, json=request, headers=headers)
@@ -230,3 +230,29 @@ def pay(request):
 
 def stk(request):
     return render(request, 'payment/pay.html', {'navbar': 'stk'})
+
+import requests
+import json
+
+def get_mpesa_token():
+    url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+    headers = {"Authorization": "Basic YOUR_AUTH_HERE"}
+
+    response = requests.get(url, headers=headers)  # Fetch token
+
+    print("Response Status:", response.status_code)  # Check status
+    print("Response Text:", response.text)  # Debug response content
+
+    try:
+        data = response.json()  # Attempt to parse JSON
+    except json.JSONDecodeError:
+        return {"error": "Invalid JSON response"}
+
+    return data
+def payment_token(request):
+    response = get_mpesa_token()
+
+    if "error" in response:
+        return JsonResponse({"error": "Failed to fetch token"}, status=500)
+
+    return JsonResponse(response)
